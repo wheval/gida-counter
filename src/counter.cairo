@@ -59,7 +59,7 @@ pub mod Counter {
         fn increase_counter(ref self: ContractState, amount: u64) {
             self.ownable.assert_only_owner();
             assert(amount != 0, 'Amount cannot be 0');
-            assert!(amount < 0, "Amount cannot be less than zero");
+            assert!(amount > 0, "Amount cannot be less than zero");
             self.counter.write(self.counter.read() + amount);
             self.emit(Event::CounterIncreased(CounterIncreased { counter: self.counter.read() }));
         }
