@@ -10,9 +10,9 @@ pub trait ICounter<TContractState> {
 /// Simple contract for counting.
 #[starknet::contract]
 pub mod Counter {
-    use core::starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use openzeppelin::access::ownable::OwnableComponent;
     use starknet::ContractAddress;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
 
@@ -29,7 +29,7 @@ pub mod Counter {
     }
 
     #[constructor]
-    fn constructor (ref self: ContractState, initial_counter: u64, owner: ContractAddress) {
+    fn constructor(ref self: ContractState, initial_counter: u64, owner: ContractAddress) {
         self.counter.write(initial_counter);
         self.ownable.initializer(owner);
     }
@@ -42,15 +42,15 @@ pub mod Counter {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
     }
-    
+
     #[derive(Drop, starknet::Event)]
     pub struct CounterIncreased {
-        pub counter: u64
+        pub counter: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct CounterDecreased {
-        pub counter: u64
+        pub counter: u64,
     }
 
 
@@ -63,14 +63,19 @@ pub mod Counter {
             self.counter.write(self.counter.read() + amount);
             self.emit(Event::CounterIncreased(CounterIncreased { counter: self.counter.read() }));
         }
-        
+
         fn get_counter(self: @ContractState) -> u64 {
             self.counter.read()
         }
         fn decrease_counter(ref self: ContractState, amount: u64) {
             self.ownable.assert_only_owner();
             assert(self.counter.read() > 0, 'Counter cannot be less than 0');
-            assert!(self.counter.read() > amount, "Amount {} is greater than counter {}", amount, self.counter.read());
+            assert!(
+                self.counter.read() > amount,
+                "Amount {} is greater than counter {}",
+                amount,
+                self.counter.read(),
+            );
             self.counter.write(self.counter.read() - amount);
             self.emit(Event::CounterDecreased(CounterDecreased { counter: self.counter.read() }));
         }
