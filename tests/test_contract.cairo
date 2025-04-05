@@ -1,4 +1,4 @@
-use counter::counter::{Counter, ICounterDispatcher, ICounterDispatcherTrait};
+use counter::counter::{Counter, ICounterDispatcher, ICounterSafeDispatcher, ICounterSafeDispatcherTrait, ICounterDispatcherTrait};
 use snforge_std::{
     ContractClassTrait, DeclareResultTrait, EventSpyAssertionsTrait, declare, spy_events,
     start_cheat_caller_address, stop_cheat_caller_address,
@@ -81,13 +81,29 @@ fn test_increase_counter_event() {
     start_cheat_caller_address(contract_address, OWNER());
     counter.increase_counter(10);
     spy
-        .assert_emitted(
-            @array![
-                (
+    .assert_emitted(
+        @array![
+            (
                     contract_address,
                     Counter::Event::CounterIncreased(Counter::CounterIncreased { counter: 20 }),
                 ),
             ],
         );
+    stop_cheat_caller_address(contract_address);
+}
+
+#[test]
+#[feature("safe_dispatcher")]
+fn test_increase_should_panic_using_safedispatcher () {
+    let initial_counter: u64 = 10;
+    let contract_address = deploy_contract(initial_counter);
+    let counter_safe_dispatcher = ICounterSafeDispatcher { contract_address };
+    start_cheat_caller_address(contract_address, OWNER());
+    match counter_safe_dispatcher.increase_counter(0) {
+        Result::Ok(_) => panic!("Counter is increased by 0"),
+        Result::Err(panic_data) => {
+            assert!(*panic_data.at(0) == 'Amount cannot be 0', "Should have panicked");
+        }
+    }
     stop_cheat_caller_address(contract_address);
 }
